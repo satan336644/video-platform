@@ -39,7 +39,7 @@ Viewers:
 - Smooth video playback worldwide
 - Scalable and maintainable architecture
 - CDN-backed video delivery
-- MVP-first development approach
+MVP-first development approach
 
 6. Open Questions / Clarifications
 
