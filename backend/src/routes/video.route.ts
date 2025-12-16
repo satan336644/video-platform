@@ -1,6 +1,16 @@
 import { Router } from "express";
+import {
+  createVideoHandler,
+  listVideosHandler,
+} from "../controllers/video.controller";
 
 const router = Router();
+
+/**
+ * Video metadata routes
+ */
+router.post("/videos", createVideoHandler);
+router.get("/videos", listVideosHandler);
 
 /**
  * POC: Generate signed upload URL (mock)
