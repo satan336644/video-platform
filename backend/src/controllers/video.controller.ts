@@ -4,12 +4,22 @@ import { createVideo, listVideos } from "../services/video.service";
 export const createVideoHandler = (req: Request, res: Response) => {
   const { title, creatorId, description } = req.body;
 
-  if (!title || !creatorId) {
+  if (
+    typeof title !== "string" ||
+    title.trim() === "" ||
+    typeof creatorId !== "string" ||
+    creatorId.trim() === ""
+  ) {
     return res.status(400).json({
-      error: "title and creatorId are required",
+      error: "title and creatorId are required and must be non-empty strings",
     });
   }
 
+  if (description !== undefined && typeof description !== "string") {
+    return res.status(400).json({
+      error: "description, if provided, must be a string",
+    });
+  }
   const video = createVideo(title, creatorId, description);
   return res.status(201).json(video);
 };
