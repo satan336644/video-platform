@@ -16,9 +16,22 @@
         const hls = new Hls();
         hls.loadSource(videoSrc);
         hls.attachMedia(video);
+
+        hls.on(Hls.Events.ERROR, function (event, data) {
+          console.error("HLS error:", event, data);
+          if (data && data.fatal) {
+            alert("An error occurred while loading the video stream. Please try again later.");
+          }
+        });
       } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = videoSrc;
       }
+
+      video.addEventListener("error", function () {
+        const mediaError = video.error;
+        console.error("Video element error:", mediaError);
+        alert("An error occurred during video playback. Please try again later.");
+      });
     </script>
   </body>
 </html>
