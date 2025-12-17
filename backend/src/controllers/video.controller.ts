@@ -20,11 +20,25 @@ export const createVideoHandler = (req: Request, res: Response) => {
       error: "description, if provided, must be a string",
     });
   }
-  const video = createVideo(title, creatorId, description);
-  return res.status(201).json(video);
+  try {
+    const video = createVideo(title, creatorId, description);
+    return res.status(201).json(video);
+  } catch (error) {
+    console.error("Error creating video:", error);
+    return res.status(500).json({
+      error: "Failed to create video",
+    });
+  }
 };
 
 export const listVideosHandler = (_req: Request, res: Response) => {
-  const videos = listVideos();
-  return res.json(videos);
+  try {
+    const videos = listVideos();
+    return res.json(videos);
+  } catch (error) {
+    console.error("Error listing videos:", error);
+    return res.status(500).json({
+      error: "Failed to list videos",
+    });
+  }
 };
