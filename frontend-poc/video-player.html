@@ -1,37 +1,138 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Video Streaming POC</title>
+    <title>Video Streaming POC - Tokenized Playback</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      video {
+        border: 1px solid #ccc;
+        margin: 20px 0;
+      }
+      .info {
+        background: #f0f0f0;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 4px;
+      }
+      .error {
+        color: #d32f2f;
+        background: #ffebee;
+      }
+      .success {
+        color: #388e3c;
+        background: #e8f5e9;
+      }
+    </style>
   </head>
   <body>
-    <h2>Video Streaming POC</h2>
+    <h1>Video Streaming POC - Tokenized Playback</h1>
+    
+    <div id="status" class="info">Loading...</div>
     <video id="video" controls width="720"></video>
 
     <script>
-      const video = document.getElementById("video");
-      const videoSrc = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+      const VIDEO_ID = "6c7904d9-4607-4832-82ca-578eb826c02b"; 
+      const API_BASE = "http://localhost:4000/api";
 
-      if (Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(videoSrc);
-        hls.attachMedia(video);
+      const statusEl = document.getElementById("status");
 
-        hls.on(Hls.Events.ERROR, function (event, data) {
-          console.error("HLS error:", event, data);
-          if (data && data.fatal) {
-            alert("An error occurred while loading the video stream. Please try again later.");
-          }
-        });
-      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = videoSrc;
+      function updateStatus(message, isError = false) {
+        statusEl.textContent = message;
+        statusEl.className = `info ${isError ? "error" : "success"}`;
+        console.log(message);
       }
 
-      video.addEventListener("error", function () {
-        const mediaError = video.error;
-        console.error("Video element error:", mediaError);
-        alert("An error occurred during video playback. Please try again later.");
-      });
+      async function playVideo() {
+        try {
+          if (VIDEO_ID === "PUT_VIDEO_ID_HERE") {
+            updateStatus(
+              "⚠️ Please replace VIDEO_ID in the HTML with an actual video ID",
+              true
+            );
+            return;
+          }
+
+          updateStatus("🔐 Step 1: Requesting playback token...");
+
+          // 1️⃣ Get playback token
+          const tokenRes = await fetch(
+            `${API_BASE}/videos/${VIDEO_ID}/playback-token`,
+            { method: "POST" }
+          );
+
+          if (!tokenRes.ok) {
+            throw new Error(`Token request failed: ${tokenRes.status}`);
+          }
+
+          const { playbackToken } = await tokenRes.json();
+          console.log("✅ Token acquired:", playbackToken);
+
+          updateStatus("🎬 Step 2: Requesting protected stream info...");
+
+          // 2️⃣ Request protected stream info
+          const streamRes = await fetch(
+            `${API_BASE}/videos/${VIDEO_ID}/stream`,
+            {
+              headers: {
+                Authorization: `Bearer ${playbackToken}`,
+              },
+            }
+          );
+
+          if (!streamRes.ok) {
+            throw new Error(`Stream request failed: ${streamRes.status}`);
+          }
+
+          const { manifestUrl, message } = await streamRes.json();
+          console.log("✅ Access granted:", message);
+          console.log("✅ Manifest URL:", manifestUrl);
+
+          updateStatus(`✅ ${message} - Initializing player...`);
+
+          // 3️⃣ Initialize HLS player
+          const video = document.getElementById("video");
+          if (Hls.isSupported()) {
+            const hls = new Hls();
+            hls.loadSource(manifestUrl);
+            hls.attachMedia(video);
+
+            hls.on(Hls.Events.MANIFEST_PARSED, function () {
+              console.log("✅ HLS manifest loaded successfully");
+              updateStatus(
+                "✅ Player ready! (Mock stream - video won't play without real HLS content)"
+              );
+              video.play().catch((e) => {
+                console.log("Auto-play prevented (expected):", e.message);
+              });
+            });
+
+            hls.on(Hls.Events.ERROR, function (event, data) {
+              console.error("❌ HLS error:", event, data);
+              if (data && data.fatal) {
+                updateStatus(
+                  `❌ HLS error: ${data.type} - ${data.reason}`,
+                  true
+                );
+              }
+            });
+          } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+            video.src = manifestUrl;
+            updateStatus("✅ Player ready (native HLS support)");
+          } else {
+            updateStatus("❌ HLS.js not supported on this browser", true);
+          }
+        } catch (error) {
+          console.error("❌ Playback error:", error);
+          updateStatus(`❌ Error: ${error.message}`, true);
+        }
+      }
+
+      // Auto-play on page load
+      playVideo();
     </script>
   </body>
 </html>
