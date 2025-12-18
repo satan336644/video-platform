@@ -17,7 +17,7 @@ export const requirePlaybackToken = (
   try {
     const payload = verifyPlaybackToken(token);
     (req as any).playback = payload;
-    next();
+    return next();
   } catch {
     return res.status(401).json({ error: "Invalid or expired playback token" });
   }
