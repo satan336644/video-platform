@@ -3,13 +3,14 @@ import {
   createVideoHandler,
   listVideosHandler,
 } from "../controllers/video.controller";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
 /**
  * Video metadata routes
  */
-router.post("/videos", createVideoHandler);
+router.post("/videos", requireAuth(["creator"]), createVideoHandler);
 router.get("/videos", listVideosHandler);
 
 /**
