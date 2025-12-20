@@ -14,3 +14,19 @@ model Video {
   creatorId   String
   createdAt   DateTime @default(now())
 }
+
+model UploadSession {
+  id        String        @id @default(uuid())
+  videoId   String
+  creatorId String
+  status    UploadStatus  @default(PENDING)
+  uploadUrl String
+  createdAt DateTime      @default(now())
+}
+
+enum UploadStatus {
+  PENDING
+  UPLOADING
+  COMPLETED
+  FAILED
+}
