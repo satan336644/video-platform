@@ -1,26 +1,23 @@
-import { Video } from "../types/video";
-import { randomUUID } from "crypto";
+import { PrismaClient } from "@prisma/client";
 
-// In-memory storage (POC only)
-const videos: Video[] = [];
+const prisma = new PrismaClient();
 
-export const createVideo = (
-  title: string,
-  creatorId: string,
-  description?: string
-): Video => {
-  const video: Video = {
-    id: randomUUID(),
-    title,
-    description,
-    creatorId,
-    createdAt: new Date(),
-  };
+export async function createVideo(data: {
+  title: string;
+  description?: string;
+  creatorId: string;
+}) {
+  return prisma.video.create({
+    data: {
+      title: data.title,
+      description: data.description ?? "",
+      creatorId: data.creatorId,
+    },
+  });
+}
 
-  videos.push(video);
-  return video;
-};
-
-export const listVideos = (): Video[] => {
-  return videos;
-};
+export async function listVideos() {
+  return prisma.video.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+}

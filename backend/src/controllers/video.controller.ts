@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { createVideo, listVideos } from "../services/video.service";
 
-export const createVideoHandler = (req: Request, res: Response) => {
+export const createVideoHandler = async (req: Request, res: Response) => {
   const { title, creatorId, description } = req.body;
 
   if (
@@ -21,7 +21,7 @@ export const createVideoHandler = (req: Request, res: Response) => {
     });
   }
   try {
-    const video = createVideo(title, creatorId, description);
+    const video = await createVideo({ title, creatorId, description });
     return res.status(201).json(video);
   } catch (error) {
     console.error("Error creating video:", error);
@@ -31,9 +31,9 @@ export const createVideoHandler = (req: Request, res: Response) => {
   }
 };
 
-export const listVideosHandler = (_req: Request, res: Response) => {
+export const listVideosHandler = async (_req: Request, res: Response) => {
   try {
-    const videos = listVideos();
+    const videos = await listVideos();
     return res.json(videos);
   } catch (error) {
     console.error("Error listing videos:", error);
