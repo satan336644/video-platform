@@ -5,6 +5,7 @@ import videoRoute from "./routes/video.route";
 import playbackRoute from "./routes/playback.route";
 import streamRoute from "./routes/stream.route";
 import authRoute from "./routes/auth.route";
+import uploadRoute from "./routes/upload.route";
 
 const app = express();
 
@@ -16,5 +17,6 @@ app.use("/api", videoRoute);
 app.use("/api", playbackRoute);
 app.use("/api", streamRoute);
 app.use("/api", authRoute);
+app.use("/api", uploadRoute);
 
 export default app;
