@@ -30,3 +30,16 @@ enum UploadStatus {
   COMPLETED
   FAILED
 }
+
+model StoredObject {
+  id          String   @id @default(uuid())
+  videoId     String
+  provider    String
+  objectKey   String
+  contentType String?
+  sizeBytes   Int?
+  status      String
+  createdAt   DateTime @default(now())
+
+  @@index([videoId])
+}

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../middlewares/requireAuth";
-import { createUploadSession } from "../services/upload.service";
+import { prisma } from "../prisma";
+import { storageProvider } from "../storage/storage.service";
 
 const router = Router();
 
@@ -9,10 +10,27 @@ router.post(
   requireAuth(["creator"]),
   async (req, res) => {
     const { videoId } = req.params;
-    const user = (req as any).user;
 
-    const session = await createUploadSession(videoId, user.id);
-    res.json(session);
+    const video = await prisma.video.findUnique({ where: { id: videoId } });
+    if (!video) {
+      return res.status(404).json({ error: "Video not found" });
+    }
+
+    const intent = await storageProvider.createUploadIntent(videoId);
+
+    await prisma.storedObject.create({
+      data: {
+        videoId,
+        provider: "local",
+        objectKey: intent.objectKey,
+        status: "PENDING",
+      },
+    });
+
+    return res.json({
+      uploadUrl: intent.uploadUrl,
+      objectKey: intent.objectKey,
+    });
   }
 );
 
