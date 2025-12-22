@@ -1,15 +1,20 @@
 import { Request, Response } from "express";
 import { generatePlaybackToken } from "../utils/playbackToken";
-import { listVideos } from "../services/video.service";
+import { prisma } from "../prisma";
 
 export const issuePlaybackTokenHandler = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const videos = await listVideos();
-    const videoExists = videos.some((v: any) => v.id === id);
-    if (!videoExists) {
+    const video = await prisma.video.findUnique({ where: { id } });
+    if (!video) {
       return res.status(404).json({ error: "Video not found" });
+    }
+
+    if (video.status !== "READY") {
+      return res.status(403).json({
+        error: "Video not ready for playback. Please ensure the video has been processed.",
+      });
     }
 
     const token = generatePlaybackToken(id);

@@ -27,6 +27,15 @@ router.post(
       },
     });
 
+    // Update video status to UPLOADED and store object key
+    await prisma.video.update({
+      where: { id: videoId },
+      data: {
+        status: "UPLOADED",
+        sourceObjectKey: intent.objectKey,
+      },
+    });
+
     return res.json({
       uploadUrl: intent.uploadUrl,
       objectKey: intent.objectKey,

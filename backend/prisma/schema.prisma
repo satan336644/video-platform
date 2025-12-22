@@ -8,11 +8,25 @@ generator client {
 }
 
 model Video {
-  id          String   @id @default(uuid())
-  title       String
-  description String
-  creatorId   String
-  createdAt   DateTime @default(now())
+  id              String       @id @default(uuid())
+  title           String
+  description     String
+  creatorId       String
+  status          VideoStatus  @default(CREATED)
+
+  sourceObjectKey String?
+  manifestPath    String?
+  processedAt     DateTime?
+
+  createdAt       DateTime     @default(now())
+}
+
+enum VideoStatus {
+  CREATED
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
 }
 
 model UploadSession {
