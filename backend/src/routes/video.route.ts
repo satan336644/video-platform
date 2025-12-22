@@ -2,6 +2,7 @@ import { Router } from "express";
 import { createVideoHandler, listVideosHandler } from "../controllers/video.controller";
 import { requireAuth } from "../middlewares/requireAuth";
 import { prisma } from "../prisma";
+import { createTranscodingJob } from "../services/transcoding.service";
 
 const router = Router();
 
@@ -38,6 +39,12 @@ router.post("/videos/:id/process", requireAuth(["creator"]), async (req, res) =>
   if (video.status !== "UPLOADED") {
     return res.status(400).json({ error: "Invalid video state" });
   }
+
+  // Create a transcoding job entry (mock, pending real worker)
+  await createTranscodingJob({
+    videoId: video.id,
+    inputObjectKey: video.sourceObjectKey!,
+  });
 
   await prisma.video.update({
     where: { id: video.id },

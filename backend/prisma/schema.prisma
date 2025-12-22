@@ -18,6 +18,8 @@ model Video {
   manifestPath    String?
   processedAt     DateTime?
 
+  transcodingJobs TranscodingJob[]
+
   createdAt       DateTime     @default(now())
 }
 
@@ -54,6 +56,20 @@ model StoredObject {
   sizeBytes   Int?
   status      String
   createdAt   DateTime @default(now())
+
+  @@index([videoId])
+}
+
+model TranscodingJob {
+  id             String   @id @default(uuid())
+  videoId        String
+  inputObjectKey String
+  outputPrefix   String
+  status         String   // PENDING | RUNNING | COMPLETED | FAILED
+  createdAt      DateTime @default(now())
+  completedAt    DateTime?
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
 
   @@index([videoId])
 }
