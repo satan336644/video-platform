@@ -25,6 +25,24 @@ router.post("/videos/upload-url", (_req, res) => {
   });
 });
 
+router.get("/videos/:id/status", async (req, res) => {
+  const video = await prisma.video.findUnique({
+    where: { id: req.params.id },
+    select: {
+      id: true,
+      status: true,
+      processedAt: true,
+      createdAt: true,
+    },
+  });
+
+  if (!video) {
+    return res.status(404).json({ error: "Video not found" });
+  }
+
+  return res.json(video);
+});
+
 export default router;
 
 // Processing endpoint (mock) per Phase 8
@@ -49,11 +67,9 @@ router.post("/videos/:id/process", requireAuth(["creator"]), async (req, res) =>
   await prisma.video.update({
     where: { id: video.id },
     data: {
-      status: "READY",
-      manifestPath: `/hls/${video.id}/index.m3u8`,
-      processedAt: new Date(),
+      status: "PROCESSING",
     },
   });
 
-  return res.json({ message: "Video processed (mock)" });
+  return res.json({ message: "Video processing started (mock)" });
 });
