@@ -13,7 +13,8 @@ export const issuePlaybackTokenHandler = async (req: Request, res: Response) => 
 
     if (video.status !== "READY") {
       return res.status(403).json({
-        error: "Video not ready for playback. Please ensure the video has been processed.",
+        error: "Video is not ready for playback",
+        status: video.status,
       });
     }
 

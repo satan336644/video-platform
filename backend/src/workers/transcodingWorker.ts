@@ -38,6 +38,7 @@ async function processJobs() {
     data: {
       status: "READY",
       manifestPath: `/mock-hls/${job.videoId}/index.m3u8`,
+      processedAt: new Date(),
     },
   });
 
