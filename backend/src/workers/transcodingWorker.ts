@@ -37,7 +37,7 @@ async function processJobs() {
     where: { id: job.videoId },
     data: {
       status: "READY",
-      manifestPath: `/mock-hls/${job.videoId}/index.m3u8`,
+      manifestPath: `/processed/${job.videoId}/index.m3u8`,
       processedAt: new Date(),
     },
   });
