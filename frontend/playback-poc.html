@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Playback POC</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; padding: 24px; }
+    video { width: 100%; max-width: 720px; background: #000; }
+    .hint { color: #666; margin-top: 8px; }
+    .ok { color: #10893e; }
+    .err { color: #a4262c; }
+  </style>
+</head>
+<body>
+  <h2>Video Playback POC</h2>
+  <video id="video" controls playsinline></video>
+  <div class="hint">Replace <code>videoId</code> with a READY video that actually has HLS media available in storage.</div>
+
+  <script>
+    async function playVideo() {
+      // IMPORTANT: Using a READY videoId that you seeded with HLS outputs
+      const videoId = "83b3e8c0-78e0-4553-9a2d-02b7b8ea5ea7";
+
+      try {
+        console.log("[Phase13] Requesting playback token for", videoId);
+        const tokenRes = await fetch(`http://localhost:4000/api/videos/${videoId}/playback-token`, {
+          method: "POST",
+        });
+        if (!tokenRes.ok) {
+          const text = await tokenRes.text();
+          throw new Error(`Token request failed: ${tokenRes.status} ${text}`);
+        }
+        const { playbackToken } = await tokenRes.json();
+        console.log("[Phase13] Got playback token ✓");
+
+        console.log("[Phase13] Requesting manifest URL using playback token...");
+        const streamRes = await fetch(`http://localhost:4000/api/videos/${videoId}/stream`, {
+          headers: { Authorization: `Bearer ${playbackToken}` },
+        });
+        if (!streamRes.ok) {
+          const text = await streamRes.text();
+          throw new Error(`Stream request failed: ${streamRes.status} ${text}`);
+        }
+        const { manifestUrl } = await streamRes.json();
+        console.log("[Phase13] Received manifestUrl:", manifestUrl);
+
+        const video = document.getElementById("video");
+
+        if (window.Hls && Hls.isSupported()) {
+          console.log("[Phase13] Using Hls.js");
+          const hls = new Hls({
+            // Keep defaults minimal; we're validating basic playback only
+          });
+          hls.on(Hls.Events.ERROR, (event, data) => {
+            console.error("[Phase13] HLS error", data);
+          });
+          hls.loadSource(manifestUrl);
+          hls.attachMedia(video);
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          console.log("[Phase13] Native HLS supported (Safari)");
+          video.src = manifestUrl;
+        } else {
+          throw new Error("HLS not supported in this browser");
+        }
+      } catch (err) {
+        console.error("[Phase13] Playback error:", err);
+        const msg = (err && err.message) ? err.message : String(err);
+        const div = document.createElement("div");
+        div.className = "err";
+        div.textContent = `Playback failed: ${msg}`;
+        document.body.appendChild(div);
+      }
+    }
+
+    playVideo();
+  </script>
+</body>
+</html>
