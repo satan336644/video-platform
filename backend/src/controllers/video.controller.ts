@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
-import { createVideo, listVideos } from "../services/video.service";
+import { createVideo, listVideos, updateVideoMetadata, getVideoById } from "../services/video.service";
 
 export const createVideoHandler = async (req: Request, res: Response) => {
-  const { title, creatorId, description } = req.body;
+  const { title, creatorId, description, category, tags, visibility } = req.body;
 
+  // Validate required fields
   if (
     typeof title !== "string" ||
     title.trim() === "" ||
@@ -15,13 +16,42 @@ export const createVideoHandler = async (req: Request, res: Response) => {
     });
   }
 
+  // Validate optional string fields
   if (description !== undefined && typeof description !== "string") {
     return res.status(400).json({
       error: "description, if provided, must be a string",
     });
   }
+
+  if (category !== undefined && typeof category !== "string") {
+    return res.status(400).json({
+      error: "category, if provided, must be a string",
+    });
+  }
+
+  // Validate tags array
+  if (tags !== undefined && (!Array.isArray(tags) || !tags.every((t) => typeof t === "string"))) {
+    return res.status(400).json({
+      error: "tags, if provided, must be an array of strings",
+    });
+  }
+
+  // Validate visibility enum
+  if (visibility !== undefined && !["PUBLIC", "UNLISTED", "PRIVATE"].includes(visibility)) {
+    return res.status(400).json({
+      error: "visibility must be one of: PUBLIC, UNLISTED, PRIVATE",
+    });
+  }
+
   try {
-    const video = await createVideo({ title, creatorId, description });
+    const video = await createVideo({
+      title,
+      creatorId,
+      description,
+      category,
+      tags,
+      visibility: visibility || "PUBLIC",
+    });
     return res.status(201).json(video);
   } catch (error) {
     console.error("Error creating video:", error);
@@ -40,5 +70,71 @@ export const listVideosHandler = async (_req: Request, res: Response) => {
     return res.status(500).json({
       error: "Failed to list videos",
     });
+  }
+};
+
+export const updateVideoMetadataHandler = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const creatorId = (req as any).user?.userId; // From auth middleware
+  const { title, description, category, tags, visibility } = req.body;
+
+  if (!creatorId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  // Validate optional fields
+  if (title !== undefined && typeof title !== "string") {
+    return res.status(400).json({ error: "title must be a string" });
+  }
+
+  if (description !== undefined && typeof description !== "string") {
+    return res.status(400).json({ error: "description must be a string" });
+  }
+
+  if (category !== undefined && typeof category !== "string") {
+    return res.status(400).json({ error: "category must be a string" });
+  }
+
+  if (tags !== undefined && (!Array.isArray(tags) || !tags.every((t) => typeof t === "string"))) {
+    return res.status(400).json({ error: "tags must be an array of strings" });
+  }
+
+  if (visibility !== undefined && !["PUBLIC", "UNLISTED", "PRIVATE"].includes(visibility)) {
+    return res.status(400).json({ error: "visibility must be one of: PUBLIC, UNLISTED, PRIVATE" });
+  }
+
+  try {
+    const updated = await updateVideoMetadata(id, creatorId, {
+      title,
+      description,
+      category,
+      tags,
+      visibility,
+    });
+    return res.json(updated);
+  } catch (error: any) {
+    if (error.message === "Video not found") {
+      return res.status(404).json({ error: "Video not found" });
+    }
+    if (error.message.includes("Unauthorized")) {
+      return res.status(403).json({ error: "Only creator can update metadata" });
+    }
+    console.error("Error updating video metadata:", error);
+    return res.status(500).json({ error: "Failed to update video metadata" });
+  }
+};
+
+export const getVideoHandler = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const video = await getVideoById(id);
+    if (!video) {
+      return res.status(404).json({ error: "Video not found" });
+    }
+    return res.json(video);
+  } catch (error) {
+    console.error("Error fetching video:", error);
+    return res.status(500).json({ error: "Failed to fetch video" });
   }
 };
