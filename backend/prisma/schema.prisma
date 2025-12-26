@@ -16,6 +16,7 @@ model Video {
   visibility      VideoVisibility @default(PUBLIC)
   category        String?
   tags            String[]
+  viewCount       Int          @default(0)
 
   sourceObjectKey String?
   manifestPath    String?
