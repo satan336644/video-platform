@@ -70,3 +70,41 @@ export async function updateVideoMetadata(
     },
   });
 }
+
+export async function listPublicVideos(filters?: {
+  tag?: string;
+  category?: string;
+}) {
+  const where: any = {
+    status: "READY",
+    visibility: "PUBLIC",
+  };
+
+  if (filters?.tag) {
+    where.tags = { has: filters.tag };
+  }
+
+  if (filters?.category) {
+    where.category = filters.category;
+  }
+
+  return prisma.video.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function searchVideos(query: string) {
+  return prisma.video.findMany({
+    where: {
+      status: "READY",
+      visibility: "PUBLIC",
+      OR: [
+        { title: { contains: query, mode: "insensitive" } },
+        { description: { contains: query, mode: "insensitive" } },
+        { tags: { has: query } },
+      ],
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
