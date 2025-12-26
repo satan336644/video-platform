@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createVideo, listVideos, updateVideoMetadata, getVideoById, listPublicVideos, searchVideos } from "../services/video.service";
+import { createVideo, listVideos, updateVideoMetadata, getVideoById, listPublicVideos, searchVideos, getCreatorVideos, getPublicVideoDetail } from "../services/video.service";
 
 export const createVideoHandler = async (req: Request, res: Response) => {
   const { title, creatorId, description, category, tags, visibility } = req.body;
@@ -176,5 +176,58 @@ export const searchVideosHandler = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error searching videos:", error);
     return res.status(500).json({ error: "Failed to search videos" });
+  }
+};
+
+export const getCreatorVideosHandler = async (req: Request, res: Response) => {
+  const creatorId = (req as any).user?.userId;
+  const { status, visibility, page, limit } = req.query;
+
+  if (!creatorId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  // Validate optional query parameters
+  if (status !== undefined && typeof status !== "string") {
+    return res.status(400).json({ error: "status must be a string" });
+  }
+
+  if (visibility !== undefined && typeof visibility !== "string") {
+    return res.status(400).json({ error: "visibility must be a string" });
+  }
+
+  const pageNum = parseInt(page as string, 10) || 1;
+  const limitNum = parseInt(limit as string, 10) || 20;
+
+  if (pageNum < 1 || limitNum < 1) {
+    return res.status(400).json({ error: "page and limit must be positive integers" });
+  }
+
+  try {
+    const result = await getCreatorVideos(creatorId, {
+      status: status as string | undefined,
+      visibility: visibility as string | undefined,
+      page: pageNum,
+      limit: limitNum,
+    });
+    return res.json(result);
+  } catch (error) {
+    console.error("Error fetching creator videos:", error);
+    return res.status(500).json({ error: "Failed to fetch creator videos" });
+  }
+};
+
+export const getPublicVideoDetailHandler = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const video = await getPublicVideoDetail(id);
+    if (!video) {
+      return res.status(404).json({ error: "Video not found" });
+    }
+    return res.json(video);
+  } catch (error) {
+    console.error("Error fetching public video detail:", error);
+    return res.status(500).json({ error: "Failed to fetch public video detail" });
   }
 };
