@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createVideo, listVideos, updateVideoMetadata, getVideoById } from "../services/video.service";
+import { createVideo, listVideos, updateVideoMetadata, getVideoById, listPublicVideos, searchVideos } from "../services/video.service";
 
 export const createVideoHandler = async (req: Request, res: Response) => {
   const { title, creatorId, description, category, tags, visibility } = req.body;
@@ -136,5 +136,45 @@ export const getVideoHandler = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error fetching video:", error);
     return res.status(500).json({ error: "Failed to fetch video" });
+  }
+};
+
+export const listPublicVideosHandler = async (req: Request, res: Response) => {
+  const { tag, category } = req.query;
+
+  // Validate query parameters
+  if (tag !== undefined && typeof tag !== "string") {
+    return res.status(400).json({ error: "tag must be a string" });
+  }
+
+  if (category !== undefined && typeof category !== "string") {
+    return res.status(400).json({ error: "category must be a string" });
+  }
+
+  try {
+    const videos = await listPublicVideos({
+      tag: tag as string | undefined,
+      category: category as string | undefined,
+    });
+    return res.json(videos);
+  } catch (error) {
+    console.error("Error listing public videos:", error);
+    return res.status(500).json({ error: "Failed to list public videos" });
+  }
+};
+
+export const searchVideosHandler = async (req: Request, res: Response) => {
+  const { q } = req.query;
+
+  if (!q || typeof q !== "string") {
+    return res.status(400).json({ error: "q query parameter is required and must be a string" });
+  }
+
+  try {
+    const videos = await searchVideos(q);
+    return res.json(videos);
+  } catch (error) {
+    console.error("Error searching videos:", error);
+    return res.status(500).json({ error: "Failed to search videos" });
   }
 };

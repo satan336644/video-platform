@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createVideoHandler, listVideosHandler, updateVideoMetadataHandler, getVideoHandler } from "../controllers/video.controller";
+import { createVideoHandler, listVideosHandler, updateVideoMetadataHandler, getVideoHandler, listPublicVideosHandler, searchVideosHandler } from "../controllers/video.controller";
 import { requireAuth } from "../middlewares/requireAuth";
 import { prisma } from "../prisma";
 import { createTranscodingJob } from "../services/transcoding.service";
@@ -11,6 +11,8 @@ const router = Router();
  */
 router.post("/videos", requireAuth(["creator"]), createVideoHandler);
 router.get("/videos", listVideosHandler);
+router.get("/videos/public", listPublicVideosHandler);
+router.get("/videos/search", searchVideosHandler);
 router.get("/videos/:id", getVideoHandler);
 router.patch("/videos/:id/metadata", requireAuth(["creator"]), updateVideoMetadataHandler);
 
