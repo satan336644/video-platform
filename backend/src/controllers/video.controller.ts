@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createVideo, listVideos, updateVideoMetadata, getVideoById, listPublicVideos, searchVideos, getCreatorVideos, getPublicVideoDetail } from "../services/video.service";
+import { createVideo, listVideos, updateVideoMetadata, getVideoById, listPublicVideos, searchVideos, getCreatorVideos, getPublicVideoDetail, getPopularVideos, getTrendingVideos } from "../services/video.service";
 
 export const createVideoHandler = async (req: Request, res: Response) => {
   const { title, creatorId, description, category, tags, visibility } = req.body;
@@ -229,5 +229,39 @@ export const getPublicVideoDetailHandler = async (req: Request, res: Response) =
   } catch (error) {
     console.error("Error fetching public video detail:", error);
     return res.status(500).json({ error: "Failed to fetch public video detail" });
+  }
+};
+
+export const getPopularVideosHandler = async (req: Request, res: Response) => {
+  const { limit } = req.query;
+  const limitNum = parseInt(limit as string, 10) || 20;
+
+  if (limitNum < 1 || limitNum > 100) {
+    return res.status(400).json({ error: "limit must be between 1 and 100" });
+  }
+
+  try {
+    const videos = await getPopularVideos(limitNum);
+    return res.json(videos);
+  } catch (error) {
+    console.error("Error fetching popular videos:", error);
+    return res.status(500).json({ error: "Failed to fetch popular videos" });
+  }
+};
+
+export const getTrendingVideosHandler = async (req: Request, res: Response) => {
+  const { limit } = req.query;
+  const limitNum = parseInt(limit as string, 10) || 20;
+
+  if (limitNum < 1 || limitNum > 100) {
+    return res.status(400).json({ error: "limit must be between 1 and 100" });
+  }
+
+  try {
+    const videos = await getTrendingVideos(limitNum);
+    return res.json(videos);
+  } catch (error) {
+    console.error("Error fetching trending videos:", error);
+    return res.status(500).json({ error: "Failed to fetch trending videos" });
   }
 };

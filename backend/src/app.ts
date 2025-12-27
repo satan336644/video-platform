@@ -33,4 +33,18 @@ app.post("/test/videos/:id/set-ready", async (req, res) => {
   }
 });
 
+// Test helper: Set video view count (for development only)
+app.post("/test/videos/:id/set-views", async (req, res) => {
+  try {
+    const { viewCount } = req.body;
+    const video = await prisma.video.update({
+      where: { id: req.params.id },
+      data: { viewCount: viewCount || 0 },
+    });
+    res.json(video);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update view count" });
+  }
+});
+
 export default app;
