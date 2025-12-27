@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { prisma } from "../prisma";
 
+const VIEW_THRESHOLD_MS = parseInt(process.env.VIEW_THRESHOLD_MS || "5000", 10);
+
 export const getProtectedManifestHandler = async (
   req: Request,
   res: Response
@@ -8,6 +10,7 @@ export const getProtectedManifestHandler = async (
   const playback = (req as any).playback;
   const videoId = playback.videoId;
   const tokenId = playback.jti;
+  const issuedAtFromToken = playback.iat ? new Date(playback.iat * 1000) : new Date();
 
   // Fetch video to check status and manifestPath
   const video = await prisma.video.findUnique({
@@ -49,23 +52,45 @@ export const getProtectedManifestHandler = async (
 
   const manifestUrl = `${publicBaseUrl}${video.manifestPath}`;
 
-  // Phase 15.3: Idempotent view count increment
-  // Only for PUBLIC + READY videos, and only once per playback token
+  // Phase 15.4: Idempotent + thresholded view count increment
+  // Rules: PUBLIC + READY only; require playback token; increment once per token after threshold
   if (video.visibility === "PUBLIC" && video.status === "READY" && tokenId) {
     try {
-      await prisma.$transaction(async (tx) => {
-        // Create usage record; if duplicate, transaction will fail and we won't increment
-        await tx.playbackTokenUsage.create({
-          data: { tokenId: tokenId, videoId: videoId },
+      const now = new Date();
+
+      // Fetch or create usage record (first stream call)
+      let usage = await prisma.playbackTokenUsage.findUnique({ where: { tokenId } });
+      if (!usage) {
+        usage = await prisma.playbackTokenUsage.create({
+          data: {
+            tokenId,
+            videoId,
+            issuedAt: issuedAtFromToken,
+            usedAt: now,
+            viewCounted: false,
+          },
         });
-        await tx.video.update({
-          where: { id: videoId },
-          data: { viewCount: { increment: 1 } },
+      }
+
+      const elapsedMs = now.getTime() - usage.usedAt.getTime();
+
+      if (!usage.viewCounted && elapsedMs >= VIEW_THRESHOLD_MS) {
+        await prisma.$transaction(async (tx) => {
+          // Mark counted only if still uncounted
+          const result = await tx.playbackTokenUsage.updateMany({
+            where: { tokenId, viewCounted: false },
+            data: { viewCounted: true },
+          });
+
+          if (result.count > 0) {
+            await tx.video.update({
+              where: { id: videoId },
+              data: { viewCount: { increment: 1 } },
+            });
+          }
         });
-      });
+      }
     } catch (err: any) {
-      // Unique violation or other error -> do not increment again
-      // Optional: log only unexpected errors
       if (process.env.LOG_LEVEL === "debug") {
         console.debug("View increment skipped or failed:", err?.message || err);
       }
