@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createVideo, listVideos, updateVideoMetadata, getVideoById, listPublicVideos, searchVideos, getCreatorVideos, getPublicVideoDetail, getPopularVideos, getTrendingVideos } from "../services/video.service";
+import { createVideo, listVideos, updateVideoMetadata, getVideoById, listPublicVideos, searchVideos, getCreatorVideos, getPublicVideoDetail, getPopularVideos, getTrendingVideos, getCreatorAggregateStats, getCreatorVideoStats } from "../services/video.service";
 
 export const createVideoHandler = async (req: Request, res: Response) => {
   const { title, creatorId, description, category, tags, visibility } = req.body;
@@ -263,5 +263,34 @@ export const getTrendingVideosHandler = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error fetching trending videos:", error);
     return res.status(500).json({ error: "Failed to fetch trending videos" });
+  }
+};
+
+// Phase 15.2: Creator Stats & Analytics (Foundation)
+export const getCreatorStatsHandler = async (req: Request, res: Response) => {
+  const creatorId = (req as any).user?.userId;
+  if (!creatorId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const stats = await getCreatorAggregateStats(creatorId);
+    return res.json(stats);
+  } catch (error) {
+    console.error("Error fetching creator stats:", error);
+    return res.status(500).json({ error: "Failed to fetch creator stats" });
+  }
+};
+
+export const getCreatorVideoStatsHandler = async (req: Request, res: Response) => {
+  const creatorId = (req as any).user?.userId;
+  if (!creatorId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const items = await getCreatorVideoStats(creatorId);
+    return res.json(items);
+  } catch (error) {
+    console.error("Error fetching creator video stats:", error);
+    return res.status(500).json({ error: "Failed to fetch creator video stats" });
   }
 };

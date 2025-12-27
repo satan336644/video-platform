@@ -229,3 +229,35 @@ export async function getTrendingVideos(limit: number = 20) {
     take: limit,
   });
 }
+
+// Phase 15.2: Creator Stats & Analytics (Foundation)
+export async function getCreatorAggregateStats(creatorId: string) {
+  const [totalVideos, readyVideos, publicVideos, viewsAgg] = await Promise.all([
+    prisma.video.count({ where: { creatorId } }),
+    prisma.video.count({ where: { creatorId, status: "READY" } }),
+    prisma.video.count({ where: { creatorId, visibility: "PUBLIC" } }),
+    prisma.video.aggregate({ where: { creatorId }, _sum: { viewCount: true } }),
+  ]);
+
+  return {
+    totalVideos,
+    readyVideos,
+    totalViews: viewsAgg._sum.viewCount || 0,
+    publicVideos,
+  };
+}
+
+export async function getCreatorVideoStats(creatorId: string) {
+  return prisma.video.findMany({
+    where: { creatorId },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      visibility: true,
+      viewCount: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
