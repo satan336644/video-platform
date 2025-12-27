@@ -17,12 +17,15 @@ model Video {
   category        String?
   tags            String[]
   viewCount       Int          @default(0)
+  likeCount       Int          @default(0)
 
   sourceObjectKey String?
   manifestPath    String?
   processedAt     DateTime?
 
   transcodingJobs TranscodingJob[]
+  likes           Like[]
+  watchHistory    WatchHistory[]
 
   createdAt       DateTime     @default(now())
 
@@ -99,5 +102,49 @@ model PlaybackTokenUsage {
   usedAt   DateTime
   viewCounted Boolean @default(false)
 
+  @@index([videoId])
+}
+
+// Tracks user likes/favorites on videos
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  videoId   String
+  createdAt DateTime @default(now())
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@index([videoId])
+  @@index([userId])
+}
+
+// Tracks user watch history for personalized experiences
+model WatchHistory {
+  id             String   @id @default(uuid())
+  userId         String
+  videoId        String
+  lastWatchedAt  DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@index([userId, lastWatchedAt])
+  @@index([videoId])
+}
+
+// Stored notifications for users (foundation for future real-time)
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   // recipient of the notification (e.g., creator)
+  type      String   // e.g., LIKE, COMMENT, FOLLOW
+  actorId   String   // who triggered the notification (e.g., liker)
+  videoId   String?  // optional associated video
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([actorId])
   @@index([videoId])
 }
