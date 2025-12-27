@@ -1,4 +1,4 @@
-import { prisma } from "../src/prisma";
+const { prisma } = require("../src/prisma");
 
 async function main() {
   const video = await prisma.video.create({

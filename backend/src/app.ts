@@ -11,6 +11,8 @@ import historyRoute from "./routes/history.route";
 import continueWatchingRoute from "./routes/continueWatching.route";
 import recommendedRoute from "./routes/recommended.route";
 import notificationsRoute from "./routes/notifications.route";
+import commentRoute from "./routes/comment.route";
+import followRoute from "./routes/follow.route";
 import { prisma } from "./prisma";
 
 const app = express();
@@ -29,6 +31,8 @@ app.use("/api", streamRoute);
 app.use("/api", authRoute);
 app.use("/api", uploadRoute);
 app.use("/api", likeRoute);
+app.use("/api", commentRoute);
+app.use("/api", followRoute);
 app.use("/api", historyRoute);
 
 // Test helper: Set video to READY status (for development only)

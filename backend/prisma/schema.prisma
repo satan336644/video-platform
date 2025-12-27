@@ -26,6 +26,7 @@ model Video {
   transcodingJobs TranscodingJob[]
   likes           Like[]
   watchHistory    WatchHistory[]
+  comments        Comment[]
 
   createdAt       DateTime     @default(now())
 
@@ -147,4 +148,30 @@ model Notification {
   @@index([userId, createdAt])
   @@index([actorId])
   @@index([videoId])
+}
+
+// User comments on videos
+model Comment {
+  id        String   @id @default(uuid())
+  videoId   String
+  userId    String   // actor who comments
+  content   String?
+  createdAt DateTime @default(now())
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([videoId])
+  @@index([userId])
+}
+
+// User follow relationships
+model Follow {
+  id          String   @id @default(uuid())
+  userId      String   // target user being followed (recipient)
+  followerId  String   // actor who follows
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, followerId])
+  @@index([userId])
+  @@index([followerId])
 }
