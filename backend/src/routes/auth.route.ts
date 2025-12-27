@@ -11,7 +11,7 @@ router.post("/login", (req: Request, res: Response) => {
   }
 
   const token = jwt.sign(
-    { id: userId, role },
+    { userId, role },
     process.env.JWT_SECRET || "dev-secret",
     { expiresIn: "1h" }
   );

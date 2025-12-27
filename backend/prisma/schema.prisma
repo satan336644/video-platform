@@ -10,9 +10,12 @@ generator client {
 model Video {
   id              String       @id @default(uuid())
   title           String
-  description     String
+  description     String?
   creatorId       String
   status          VideoStatus  @default(CREATED)
+  visibility      VideoVisibility @default(PUBLIC)
+  category        String?
+  tags            String[]
 
   sourceObjectKey String?
   manifestPath    String?
@@ -21,6 +24,10 @@ model Video {
   transcodingJobs TranscodingJob[]
 
   createdAt       DateTime     @default(now())
+
+  @@index([creatorId])
+  @@index([status])
+  @@index([visibility])
 }
 
 enum VideoStatus {
@@ -28,7 +35,16 @@ enum VideoStatus {
   UPLOADED
   PROCESSING
   READY
+  HIDDEN
+  FLAGGED
+  REMOVED
   FAILED
+}
+
+enum VideoVisibility {
+  PUBLIC
+  UNLISTED
+  PRIVATE
 }
 
 model UploadSession {
