@@ -5,6 +5,7 @@ import { prisma } from "../prisma";
 export const issuePlaybackTokenHandler = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const userId = (req as any).user?.userId; // Optional userId from auth
 
     const video = await prisma.video.findUnique({ where: { id } });
     if (!video) {
@@ -22,7 +23,7 @@ export const issuePlaybackTokenHandler = async (req: Request, res: Response) => 
       ? parseInt(req.query.ttlSeconds as string, 10) || undefined
       : undefined;
 
-    const token = generatePlaybackToken(id, ttl || undefined);
+    const token = generatePlaybackToken(id, userId, ttl || undefined);
 
     return res.json({
       playbackToken: token,
