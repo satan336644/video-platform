@@ -133,3 +133,18 @@ model WatchHistory {
   @@index([userId, lastWatchedAt])
   @@index([videoId])
 }
+
+// Stored notifications for users (foundation for future real-time)
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   // recipient of the notification (e.g., creator)
+  type      String   // e.g., LIKE, COMMENT, FOLLOW
+  actorId   String   // who triggered the notification (e.g., liker)
+  videoId   String?  // optional associated video
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([actorId])
+  @@index([videoId])
+}
