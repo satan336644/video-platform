@@ -108,3 +108,79 @@ export async function searchVideos(query: string) {
     orderBy: { createdAt: "desc" },
   });
 }
+
+export async function getCreatorVideos(
+  creatorId: string,
+  filters?: {
+    status?: string;
+    visibility?: string;
+    page?: number;
+    limit?: number;
+  }
+) {
+  const page = filters?.page ?? 1;
+  const limit = filters?.limit ?? 20;
+  const skip = (page - 1) * limit;
+
+  const where: any = { creatorId };
+
+  if (filters?.status) {
+    where.status = filters.status;
+  }
+
+  if (filters?.visibility) {
+    where.visibility = filters.visibility;
+  }
+
+  const [videos, total] = await Promise.all([
+    prisma.video.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.video.count({ where }),
+  ]);
+
+  return {
+    videos,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+    },
+  };
+}
+
+export async function getPublicVideoDetail(videoId: string) {
+  const video = await prisma.video.findUnique({
+    where: { id: videoId },
+  });
+
+  if (!video) {
+    return null;
+  }
+
+  // Only return if PUBLIC and READY
+  if (video.visibility !== "PUBLIC" || video.status !== "READY") {
+    return null;
+  }
+
+  return {
+    id: video.id,
+    title: video.title,
+    description: video.description,
+    category: video.category,
+    tags: video.tags,
+    visibility: video.visibility,
+    status: video.status,
+    createdAt: video.createdAt,
+    creator: {
+      id: video.creatorId,
+    },
+    playback: {
+      manifestUrl: `${process.env.R2_PUBLIC_URL}/processed/${video.id}/index.m3u8`,
+    },
+  };
+}
