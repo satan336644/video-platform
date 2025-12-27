@@ -195,3 +195,37 @@ export async function getPublicVideoDetail(videoId: string) {
     },
   };
 }
+
+export async function getPopularVideos(limit: number = 20) {
+  return prisma.video.findMany({
+    where: {
+      status: "READY",
+      visibility: "PUBLIC",
+    },
+    orderBy: [
+      { viewCount: "desc" },
+      { createdAt: "desc" },
+    ],
+    take: limit,
+  });
+}
+
+export async function getTrendingVideos(limit: number = 20) {
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  return prisma.video.findMany({
+    where: {
+      status: "READY",
+      visibility: "PUBLIC",
+      createdAt: {
+        gte: sevenDaysAgo,
+      },
+    },
+    orderBy: [
+      { viewCount: "desc" },
+      { createdAt: "desc" },
+    ],
+    take: limit,
+  });
+}
