@@ -18,7 +18,11 @@ export const issuePlaybackTokenHandler = async (req: Request, res: Response) => 
       });
     }
 
-    const token = generatePlaybackToken(id);
+    const ttl = process.env.NODE_ENV === "development" && req.query.ttlSeconds
+      ? parseInt(req.query.ttlSeconds as string, 10) || undefined
+      : undefined;
+
+    const token = generatePlaybackToken(id, ttl || undefined);
 
     return res.json({
       playbackToken: token,

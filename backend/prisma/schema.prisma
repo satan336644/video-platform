@@ -95,7 +95,9 @@ model TranscodingJob {
 model PlaybackTokenUsage {
   tokenId String   @id
   videoId String
-  usedAt  DateTime @default(now())
+  issuedAt DateTime
+  usedAt   DateTime
+  viewCounted Boolean @default(false)
 
   @@index([videoId])
 }
