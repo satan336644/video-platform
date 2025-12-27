@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createVideoHandler, listVideosHandler, updateVideoMetadataHandler, getVideoHandler, listPublicVideosHandler, searchVideosHandler, getCreatorVideosHandler, getPublicVideoDetailHandler, getPopularVideosHandler, getTrendingVideosHandler } from "../controllers/video.controller";
+import { createVideoHandler, listVideosHandler, updateVideoMetadataHandler, getVideoHandler, listPublicVideosHandler, searchVideosHandler, getCreatorVideosHandler, getPublicVideoDetailHandler, getPopularVideosHandler, getTrendingVideosHandler, getCreatorStatsHandler, getCreatorVideoStatsHandler } from "../controllers/video.controller";
 import { requireAuth } from "../middlewares/requireAuth";
 import { prisma } from "../prisma";
 import { createTranscodingJob } from "../services/transcoding.service";
@@ -16,6 +16,8 @@ router.get("/videos/popular", getPopularVideosHandler);
 router.get("/videos/trending", getTrendingVideosHandler);
 router.get("/videos/search", searchVideosHandler);
 router.get("/creator/videos", requireAuth(["creator"]), getCreatorVideosHandler);
+router.get("/creator/stats", requireAuth(["creator"]), getCreatorStatsHandler);
+router.get("/creator/videos/stats", requireAuth(["creator"]), getCreatorVideoStatsHandler);
 router.get("/videos/:id/public", getPublicVideoDetailHandler);
 router.get("/videos/:id", getVideoHandler);
 router.patch("/videos/:id/metadata", requireAuth(["creator"]), updateVideoMetadataHandler);
