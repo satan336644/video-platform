@@ -17,12 +17,14 @@ model Video {
   category        String?
   tags            String[]
   viewCount       Int          @default(0)
+  likeCount       Int          @default(0)
 
   sourceObjectKey String?
   manifestPath    String?
   processedAt     DateTime?
 
   transcodingJobs TranscodingJob[]
+  likes           Like[]
 
   createdAt       DateTime     @default(now())
 
@@ -100,4 +102,18 @@ model PlaybackTokenUsage {
   viewCounted Boolean @default(false)
 
   @@index([videoId])
+}
+
+// Tracks user likes/favorites on videos
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  videoId   String
+  createdAt DateTime @default(now())
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@index([videoId])
+  @@index([userId])
 }
