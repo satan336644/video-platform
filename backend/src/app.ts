@@ -6,6 +6,9 @@ import playbackRoute from "./routes/playback.route";
 import streamRoute from "./routes/stream.route";
 import authRoute from "./routes/auth.route";
 import uploadRoute from "./routes/upload.route";
+import likeRoute from "./routes/like.route";
+import historyRoute from "./routes/history.route";
+import continueWatchingRoute from "./routes/continueWatching.route";
 import { prisma } from "./prisma";
 
 const app = express();
@@ -19,6 +22,9 @@ app.use("/api", playbackRoute);
 app.use("/api", streamRoute);
 app.use("/api", authRoute);
 app.use("/api", uploadRoute);
+app.use("/api", likeRoute);
+app.use("/api", historyRoute);
+app.use("/api", continueWatchingRoute);
 
 // Test helper: Set video to READY status (for development only)
 app.post("/test/videos/:id/set-ready", async (req, res) => {
@@ -58,6 +64,17 @@ app.post("/test/videos/:id/set-manifest", async (req, res) => {
     res.json(video);
   } catch (error) {
     res.status(500).json({ error: "Failed to update manifest path" });
+  }
+});
+
+// Test helper: Reset a user's watch history (for development only)
+app.post("/test/users/:userId/reset-history", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const deleted = await prisma.watchHistory.deleteMany({ where: { userId } });
+    res.json({ deletedCount: deleted.count });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to reset user watch history" });
   }
 });
 

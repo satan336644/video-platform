@@ -53,10 +53,12 @@ export const getProtectedManifestHandler = async (
   const manifestUrl = `${publicBaseUrl}${video.manifestPath}`;
 
   // Phase 15.4: Idempotent + thresholded view count increment
+  // Phase 16.2: Record watch history for authenticated users
   // Rules: PUBLIC + READY only; require playback token; increment once per token after threshold
   if (video.visibility === "PUBLIC" && video.status === "READY" && tokenId) {
     try {
       const now = new Date();
+      const userId = playback.userId; // Extract userId from token if present
 
       // Fetch or create usage record (first stream call)
       let usage = await prisma.playbackTokenUsage.findUnique({ where: { tokenId } });
@@ -87,6 +89,23 @@ export const getProtectedManifestHandler = async (
               where: { id: videoId },
               data: { viewCount: { increment: 1 } },
             });
+
+            // Phase 16.2: Record/update watch history for authenticated users
+            if (userId) {
+              await tx.watchHistory.upsert({
+                where: {
+                  userId_videoId: { userId, videoId },
+                },
+                create: {
+                  userId,
+                  videoId,
+                  lastWatchedAt: now,
+                },
+                update: {
+                  lastWatchedAt: now,
+                },
+              });
+            }
           }
         });
       }
