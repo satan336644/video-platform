@@ -9,6 +9,7 @@ import uploadRoute from "./routes/upload.route";
 import likeRoute from "./routes/like.route";
 import historyRoute from "./routes/history.route";
 import continueWatchingRoute from "./routes/continueWatching.route";
+import recommendedRoute from "./routes/recommended.route";
 import { prisma } from "./prisma";
 
 const app = express();
@@ -17,6 +18,9 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api", healthRoute);
+// Register specific feeds before generic video routes to avoid /videos/:id capturing them
+app.use("/api", recommendedRoute);
+app.use("/api", continueWatchingRoute);
 app.use("/api", videoRoute);
 app.use("/api", playbackRoute);
 app.use("/api", streamRoute);
@@ -24,7 +28,6 @@ app.use("/api", authRoute);
 app.use("/api", uploadRoute);
 app.use("/api", likeRoute);
 app.use("/api", historyRoute);
-app.use("/api", continueWatchingRoute);
 
 // Test helper: Set video to READY status (for development only)
 app.post("/test/videos/:id/set-ready", async (req, res) => {
