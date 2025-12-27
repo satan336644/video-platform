@@ -8,10 +8,14 @@ export interface PlaybackTokenPayload {
   videoId: string;
   jti: string; // unique token id for idempotency
   iat?: number;
+  userId?: string; // optional user id for history tracking
 }
 
-export const generatePlaybackToken = (videoId: string, ttlSeconds: number = TOKEN_TTL_SECONDS): string => {
+export const generatePlaybackToken = (videoId: string, userId?: string, ttlSeconds: number = TOKEN_TTL_SECONDS): string => {
   const payload: PlaybackTokenPayload = { videoId, jti: randomUUID() };
+  if (userId) {
+    payload.userId = userId;
+  }
 
   return jwt.sign(payload, PLAYBACK_TOKEN_SECRET, {
     expiresIn: ttlSeconds,

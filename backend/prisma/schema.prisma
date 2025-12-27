@@ -25,6 +25,7 @@ model Video {
 
   transcodingJobs TranscodingJob[]
   likes           Like[]
+  watchHistory    WatchHistory[]
 
   createdAt       DateTime     @default(now())
 
@@ -116,4 +117,19 @@ model Like {
   @@unique([userId, videoId])
   @@index([videoId])
   @@index([userId])
+}
+
+// Tracks user watch history for personalized experiences
+model WatchHistory {
+  id             String   @id @default(uuid())
+  userId         String
+  videoId        String
+  lastWatchedAt  DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@index([userId, lastWatchedAt])
+  @@index([videoId])
 }
