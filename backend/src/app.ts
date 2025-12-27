@@ -8,6 +8,7 @@ import authRoute from "./routes/auth.route";
 import uploadRoute from "./routes/upload.route";
 import likeRoute from "./routes/like.route";
 import historyRoute from "./routes/history.route";
+import continueWatchingRoute from "./routes/continueWatching.route";
 import { prisma } from "./prisma";
 
 const app = express();
@@ -23,6 +24,7 @@ app.use("/api", authRoute);
 app.use("/api", uploadRoute);
 app.use("/api", likeRoute);
 app.use("/api", historyRoute);
+app.use("/api", continueWatchingRoute);
 
 // Test helper: Set video to READY status (for development only)
 app.post("/test/videos/:id/set-ready", async (req, res) => {
