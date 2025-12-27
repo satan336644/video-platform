@@ -90,3 +90,12 @@ model TranscodingJob {
 
   @@index([videoId])
 }
+
+// Tracks first-use of a playback token to enforce idempotent view increments
+model PlaybackTokenUsage {
+  tokenId String   @id
+  videoId String
+  usedAt  DateTime @default(now())
+
+  @@index([videoId])
+}

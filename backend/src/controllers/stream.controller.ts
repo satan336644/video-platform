@@ -7,6 +7,7 @@ export const getProtectedManifestHandler = async (
 ) => {
   const playback = (req as any).playback;
   const videoId = playback.videoId;
+  const tokenId = playback.jti;
 
   // Fetch video to check status and manifestPath
   const video = await prisma.video.findUnique({
@@ -14,6 +15,7 @@ export const getProtectedManifestHandler = async (
     select: {
       id: true,
       status: true,
+      visibility: true,
       manifestPath: true,
     },
   });
@@ -46,6 +48,29 @@ export const getProtectedManifestHandler = async (
   }
 
   const manifestUrl = `${publicBaseUrl}${video.manifestPath}`;
+
+  // Phase 15.3: Idempotent view count increment
+  // Only for PUBLIC + READY videos, and only once per playback token
+  if (video.visibility === "PUBLIC" && video.status === "READY" && tokenId) {
+    try {
+      await prisma.$transaction(async (tx) => {
+        // Create usage record; if duplicate, transaction will fail and we won't increment
+        await tx.playbackTokenUsage.create({
+          data: { tokenId: tokenId, videoId: videoId },
+        });
+        await tx.video.update({
+          where: { id: videoId },
+          data: { viewCount: { increment: 1 } },
+        });
+      });
+    } catch (err: any) {
+      // Unique violation or other error -> do not increment again
+      // Optional: log only unexpected errors
+      if (process.env.LOG_LEVEL === "debug") {
+        console.debug("View increment skipped or failed:", err?.message || err);
+      }
+    }
+  }
 
   return res.json({
     message: "Access granted to protected stream",

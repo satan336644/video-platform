@@ -47,4 +47,18 @@ app.post("/test/videos/:id/set-views", async (req, res) => {
   }
 });
 
+// Test helper: Set video manifest path (for development only)
+app.post("/test/videos/:id/set-manifest", async (req, res) => {
+  try {
+    const { manifestPath } = req.body as { manifestPath?: string };
+    const video = await prisma.video.update({
+      where: { id: req.params.id },
+      data: { manifestPath: manifestPath ?? `/processed/${req.params.id}/index.m3u8` },
+    });
+    res.json(video);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update manifest path" });
+  }
+});
+
 export default app;
