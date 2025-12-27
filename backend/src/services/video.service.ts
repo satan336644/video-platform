@@ -167,6 +167,16 @@ export async function getPublicVideoDetail(videoId: string) {
     return null;
   }
 
+  // Increment view count asynchronously (fire-and-forget)
+  prisma.video
+    .update({
+      where: { id: videoId },
+      data: { viewCount: { increment: 1 } },
+    })
+    .catch((error) => {
+      console.error("Failed to increment view count:", error);
+    });
+
   return {
     id: video.id,
     title: video.title,
@@ -175,6 +185,7 @@ export async function getPublicVideoDetail(videoId: string) {
     tags: video.tags,
     visibility: video.visibility,
     status: video.status,
+    viewCount: video.viewCount,
     createdAt: video.createdAt,
     creator: {
       id: video.creatorId,
