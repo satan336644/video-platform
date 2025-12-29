@@ -6,6 +6,7 @@ import playbackRoute from "./routes/playback.route";
 import streamRoute from "./routes/stream.route";
 import authRoute from "./routes/auth.route";
 import uploadRoute from "./routes/upload.route";
+import likeRoute from "./routes/like.route";
 import { prisma } from "./prisma";
 
 const app = express();
@@ -19,6 +20,7 @@ app.use("/api", playbackRoute);
 app.use("/api", streamRoute);
 app.use("/api", authRoute);
 app.use("/api", uploadRoute);
+app.use("/api", likeRoute);
 
 // Test helper: Set video to READY status (for development only)
 app.post("/test/videos/:id/set-ready", async (req, res) => {
