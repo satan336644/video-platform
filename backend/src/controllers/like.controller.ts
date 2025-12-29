@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../prisma";
+import { randomUUID } from "crypto";
 
 /**
  * POST /videos/:id/like
@@ -41,6 +42,21 @@ export async function likeVideoHandler(req: Request, res: Response) {
         data: { likeCount: { increment: 1 } },
       }),
     ]);
+
+    // Emit notification to creator (if liker is not the creator)
+    if (video.creatorId !== userId) {
+      try {
+        const id = randomUUID();
+        const user = video.creatorId;
+        const actor = userId;
+        const vid = videoId;
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO "Notification" ("id", "userId", type, "actorId", "videoId") VALUES ('${id}', '${user}', 'LIKE', '${actor}', '${vid}')`
+        );
+      } catch (e) {
+        console.error("Notification create error:", (e as any)?.message || e);
+      }
+    }
 
     return res.status(201).json({ like });
   } catch (error) {
