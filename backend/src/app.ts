@@ -14,7 +14,11 @@ import recommendedRoute from "./routes/recommended.route";
 import notificationsRoute from "./routes/notifications.route";
 import commentRoute from "./routes/comment.route";
 import followRoute from "./routes/follow.route";
+import categoryRoute from './routes/category.route';
+import tagRoute from './routes/tag.route';
+import searchRoute from './routes/search.route';
 import { prisma } from "./prisma";
+
 
 const app = express();
 
@@ -36,6 +40,10 @@ app.use("/api", likeRoute);
 app.use("/api", commentRoute);
 app.use("/api", followRoute);
 app.use("/api", historyRoute);
+app.use('/api', categoryRoute);
+app.use('/api', tagRoute);
+app.use('/api', searchRoute);
+
 
 // Test helper: Set video to READY status (for development only)
 app.post("/test/videos/:id/set-ready", async (req, res) => {

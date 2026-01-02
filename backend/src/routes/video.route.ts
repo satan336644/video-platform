@@ -9,19 +9,18 @@ const router = Router();
 /**
  * Video metadata routes
  */
-router.post("/videos", requireAuth(["creator"]), createVideoHandler);
+router.post("/videos", requireAuth(["CREATOR"]), createVideoHandler);
 router.get("/videos", listVideosHandler);
 router.get("/videos/public", listPublicVideosHandler);
 router.get("/videos/popular", getPopularVideosHandler);
 router.get("/videos/trending", getTrendingVideosHandler);
 router.get("/videos/search", searchVideosHandler);
-router.get("/creator/videos", requireAuth(["creator"]), getCreatorVideosHandler);
-router.get("/creator/stats", requireAuth(["creator"]), getCreatorStatsHandler);
-router.get("/creator/videos/stats", requireAuth(["creator"]), getCreatorVideoStatsHandler);
+router.get("/creator/videos", requireAuth(["CREATOR"]), getCreatorVideosHandler);
+router.get("/creator/stats", requireAuth(["CREATOR"]), getCreatorStatsHandler);
+router.get("/creator/videos/stats", requireAuth(["CREATOR"]), getCreatorVideoStatsHandler);
 router.get("/videos/:id/public", getPublicVideoDetailHandler);
 router.get("/videos/:id", getVideoHandler);
-router.patch("/videos/:id/metadata", requireAuth(["creator"]), updateVideoMetadataHandler);
-
+router.patch("/videos/:id/metadata", requireAuth(["CREATOR"]), updateVideoMetadataHandler);
 /**
  * POC: Generate signed upload URL (mock)
  */
@@ -56,7 +55,7 @@ router.get("/videos/:id/status", async (req, res) => {
 export default router;
 
 // Processing endpoint (mock) per Phase 8
-router.post("/videos/:id/process", requireAuth(["creator"]), async (req, res) => {
+router.post("/videos/:id/process", requireAuth(["CREATOR"]), async (req, res) => {
   const { id } = req.params;
 
   const video = await prisma.video.findUnique({ where: { id } });
