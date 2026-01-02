@@ -1,5 +1,5 @@
 import { prisma } from "../prisma";
-import { VideoVisibility } from "@prisma/client";
+import { VideoVisibility, VideoCategory } from "@prisma/client";
 
 export async function createVideo(data: {
   title: string;
@@ -7,6 +7,7 @@ export async function createVideo(data: {
   description?: string;
   category?: string;
   tags?: string[];
+  categories?: VideoCategory[];
   visibility?: VideoVisibility;
 }) {
   return prisma.video.create({
@@ -14,8 +15,9 @@ export async function createVideo(data: {
       title: data.title,
       creatorId: data.creatorId,
       description: data.description ?? "",
-      category: data.category ?? null,
-      tags: data.tags ?? [],
+      category: data.category ?? null, // Old format (backward compatibility)
+      tags: data.tags ?? [], // Old format (backward compatibility)
+      categories: data.categories ?? [], // New Phase 19 format
       visibility: data.visibility ?? "PUBLIC",
     },
   });

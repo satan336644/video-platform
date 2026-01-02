@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import { createVideo, listVideos, updateVideoMetadata, getVideoById, listPublicVideos, searchVideos, getCreatorVideos, getPublicVideoDetail, getPopularVideos, getTrendingVideos, getCreatorAggregateStats, getCreatorVideoStats } from "../services/video.service";
+import { VideoCategory } from "@prisma/client";
+import { addTagsToVideo } from "../services/tag.service";
 
 export const createVideoHandler = async (req: Request, res: Response) => {
-  const { title, creatorId, description, category, tags, visibility } = req.body;
+  const { title, creatorId, description, category, tags, categories, visibility } = req.body;
 
   // Validate required fields
   if (
@@ -29,11 +31,26 @@ export const createVideoHandler = async (req: Request, res: Response) => {
     });
   }
 
-  // Validate tags array
+  // Validate tags array (old format - string[])
   if (tags !== undefined && (!Array.isArray(tags) || !tags.every((t) => typeof t === "string"))) {
     return res.status(400).json({
       error: "tags, if provided, must be an array of strings",
     });
+  }
+
+  // Validate categories array (new Phase 19 format - VideoCategory[])
+  if (categories !== undefined) {
+    if (!Array.isArray(categories)) {
+      return res.status(400).json({ error: "categories must be an array" });
+    }
+    const validCategories = Object.values(VideoCategory);
+    const invalidCats = categories.filter(c => !validCategories.includes(c as VideoCategory));
+    if (invalidCats.length > 0) {
+      return res.status(400).json({ 
+        error: `Invalid categories: ${invalidCats.join(', ')}`,
+        validCategories 
+      });
+    }
   }
 
   // Validate visibility enum
@@ -48,10 +65,17 @@ export const createVideoHandler = async (req: Request, res: Response) => {
       title,
       creatorId,
       description,
-      category,
-      tags,
+      category, // Old format (backward compatibility)
+      tags: tags || [], // Old format (backward compatibility)
+      categories: categories as VideoCategory[], // New Phase 19 format
       visibility: visibility || "PUBLIC",
     });
+
+    // Add tags using new Phase 19 tag system
+    if (tags && tags.length > 0) {
+      await addTagsToVideo(video.id, tags);
+    }
+
     return res.status(201).json(video);
   } catch (error) {
     console.error("Error creating video:", error);

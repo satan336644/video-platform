@@ -73,6 +73,57 @@ model RefreshToken {
 }
 
 // ============================================================================
+// VIDEO CATEGORY & TAG MODELS (PHASE 19)
+// ============================================================================
+
+enum VideoCategory {
+  TRANSGENDER
+  SM_BDSM
+  FOOT_FETISH
+  AMATEUR
+  PROFESSIONAL
+  SOLO
+  COUPLE
+  GROUP
+  COSPLAY
+  ROLEPLAY
+  VINTAGE
+  POV
+  COMPILATION
+  INSTRUCTIONAL
+  OTHER
+}
+
+model Tag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  useCount  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  videos VideoTag[]
+
+  @@index([name])
+  @@index([useCount])
+  @@index([slug])
+}
+
+model VideoTag {
+  id      String @id @default(uuid())
+  videoId String
+  tagId   String
+  createdAt DateTime @default(now())
+
+  video Video @relation("VideoToTag", fields: [videoId], references: [id], onDelete: Cascade)
+  tag   Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, tagId])
+  @@index([videoId])
+  @@index([tagId])
+}
+
+// ============================================================================
 // VIDEO & MEDIA MODELS
 // ============================================================================
 
@@ -101,8 +152,15 @@ model Video {
   creator         User         @relation("CreatorVideos", fields: [creatorId], references: [id], onDelete: Cascade)
   status          VideoStatus  @default(CREATED)
   visibility      VideoVisibility @default(PUBLIC)
+  
+  // Phase 19: New category and tag system
+  categories      VideoCategory[]
+  videoTags       VideoTag[]   @relation("VideoToTag")
+  
+  // Phase 19: Keep old fields for backward compatibility (will be deprecated)
   category        String?
   tags            String[]
+  
   viewCount       Int          @default(0)
   likeCount       Int          @default(0)
 
