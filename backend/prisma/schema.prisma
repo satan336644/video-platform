@@ -37,6 +37,8 @@ model User {
   followingRel    Follow[]     @relation("Follower")
   notifications   Notification[]
   sentNotifications Notification[] @relation("NotificationActor")
+  creatorStats  CreatorStats?
+  watchSessions WatchSession[]
 
   @@index([email])
   @@index([username])
@@ -172,6 +174,8 @@ model Video {
   likes           Like[]
   watchHistory    WatchHistory[]
   comments        Comment[]
+  analytics     VideoAnalytics?
+  watchSessions WatchSession[]
 
   createdAt       DateTime     @default(now())
 
@@ -309,4 +313,74 @@ model Notification {
   @@index([userId, createdAt])
   @@index([actorId])
   @@index([videoId])
+}
+
+// ============================================================================
+// CREATOR ANALYTICS & ENGAGEMENT MODELS (PHASE 20)
+// ============================================================================
+
+model VideoAnalytics {
+  id                String   @id @default(uuid())
+  videoId           String   @unique
+  totalViews        Int      @default(0)
+  totalWatchTime    BigInt   @default(0)        // Total seconds watched across all sessions
+  averageWatchTime  Float    @default(0)        // Average seconds per view
+  completionRate    Float    @default(0)        // 0-1 (percentage who watched to end)
+  engagementScore   Float    @default(0)        // Calculated: views + watch time + likes + comments
+  uniqueViewers     Int      @default(0)        // Distinct users who watched
+  peakViewerTime    DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([videoId])
+  @@index([engagementScore])
+  @@index([totalViews])
+  @@index([updatedAt])
+}
+
+model WatchSession {
+  id              String    @id @default(uuid())
+  userId          String?
+  videoId         String
+  sessionStart    DateTime  @default(now())
+  sessionEnd      DateTime?
+  watchDuration   Int       @default(0)        // Seconds actually watched
+  percentWatched  Float     @default(0)        // 0-1 (how much of video watched)
+  completedVideo  Boolean   @default(false)
+  deviceType      String?                      // mobile, desktop, tablet
+  userAgent       String?
+  ipAddress       String?
+  createdAt       DateTime  @default(now())
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user  User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([videoId])
+  @@index([userId])
+  @@index([sessionStart])
+  @@index([completedVideo])
+}
+
+model CreatorStats {
+  id                    String   @id @default(uuid())
+  creatorId             String   @unique
+  totalVideos           Int      @default(0)
+  totalViews            BigInt   @default(0)
+  totalWatchTime        BigInt   @default(0)
+  totalLikes            Int      @default(0)
+  totalComments         Int      @default(0)
+  totalFollowers        Int      @default(0)
+  averageEngagement     Float    @default(0)
+  topVideo              String?
+  lastActivityAt        DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  creator User @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId])
+  @@index([totalViews])
+  @@index([averageEngagement])
 }
