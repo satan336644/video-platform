@@ -18,6 +18,8 @@ import categoryRoute from './routes/category.route';
 import tagRoute from './routes/tag.route';
 import searchRoute from './routes/search.route';
 import analyticsRoute from './routes/analytics.route';
+import moderationRoute from "./routes/moderation.route";
+import { checkBanned } from "./middlewares/checkBanned";
 import { prisma } from "./prisma";
 
 
@@ -45,6 +47,8 @@ app.use('/api', categoryRoute);
 app.use('/api', tagRoute);
 app.use('/api', searchRoute);
 app.use('/api', analyticsRoute);
+app.use("/api", checkBanned);
+app.use("/api", moderationRoute);
 
 
 // Test helper: Set video to READY status (for development only)

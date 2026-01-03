@@ -1,5 +1,5 @@
 import { prisma } from "../prisma";
-import { VideoVisibility, VideoCategory } from "@prisma/client";
+import { VideoVisibility, VideoCategory, ModerationStatus } from "@prisma/client";
 
 export async function createVideo(data: {
   title: string;
@@ -15,10 +15,11 @@ export async function createVideo(data: {
       title: data.title,
       creatorId: data.creatorId,
       description: data.description ?? "",
-      category: data.category ?? null, // Old format (backward compatibility)
-      tags: data.tags ?? [], // Old format (backward compatibility)
-      categories: data.categories ?? [], // New Phase 19 format
+      category: data.category ?? null,
+      tags: data.tags ?? [],
+      categories: data.categories ?? [],
       visibility: data.visibility ?? "PUBLIC",
+      moderationStatus: ModerationStatus.PENDING_REVIEW,
     },
   });
 }

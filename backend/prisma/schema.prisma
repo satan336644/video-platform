@@ -17,31 +17,46 @@ enum UserRole {
   ADMIN
 }
 
-model User {
-  id              String       @id @default(uuid())
-  email           String       @unique
-  username        String       @unique
-  passwordHash    String
-  role            UserRole     @default(VIEWER)
-  emailVerified   Boolean      @default(false)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+enum ModerationStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  FLAGGED
+  REMOVED
+}
 
-  profile         UserProfile?
-  refreshTokens   RefreshToken[]
-  videos          Video[]      @relation("CreatorVideos")
-  likes           Like[]
-  watchHistory    WatchHistory[]
-  comments        Comment[]
-  followersRel    Follow[]     @relation("FollowTarget")
-  followingRel    Follow[]     @relation("Follower")
-  notifications   Notification[]
+model User {
+  id               String       @id @default(uuid())
+  email            String       @unique
+  username         String       @unique
+  passwordHash     String
+  role             UserRole     @default(VIEWER)
+  emailVerified    Boolean      @default(false)
+  isBanned         Boolean      @default(false)
+  suspendedUntil   DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  profile          UserProfile?
+  refreshTokens    RefreshToken[]
+  videos           Video[]      @relation("CreatorVideos")
+  likes            Like[]
+  watchHistory     WatchHistory[]
+  comments         Comment[]
+  followersRel     Follow[]     @relation("FollowTarget")
+  followingRel     Follow[]     @relation("Follower")
+  notifications    Notification[]
   sentNotifications Notification[] @relation("NotificationActor")
-  creatorStats  CreatorStats?
-  watchSessions WatchSession[]
+  creatorStats     CreatorStats?
+  watchSessions    WatchSession[]
+  reportsMade      Report[]     @relation("ReporterReports")
+  bans             UserBan[]    @relation("BannedUser")
+  bannedUsers      UserBan[]    @relation("AdminBans")
 
   @@index([email])
   @@index([username])
+  @@index([isBanned])
+  @@index([suspendedUntil])
 }
 
 model UserProfile {
@@ -112,9 +127,9 @@ model Tag {
 }
 
 model VideoTag {
-  id      String @id @default(uuid())
-  videoId String
-  tagId   String
+  id        String   @id @default(uuid())
+  videoId   String
+  tagId     String
   createdAt DateTime @default(now())
 
   video Video @relation("VideoToTag", fields: [videoId], references: [id], onDelete: Cascade)
@@ -137,7 +152,6 @@ enum VideoStatus {
   HIDDEN
   FLAGGED
   REMOVED
-  FAILED
 }
 
 enum VideoVisibility {
@@ -147,41 +161,50 @@ enum VideoVisibility {
 }
 
 model Video {
-  id              String       @id @default(uuid())
-  title           String
-  description     String?
-  creatorId       String
-  creator         User         @relation("CreatorVideos", fields: [creatorId], references: [id], onDelete: Cascade)
-  status          VideoStatus  @default(CREATED)
-  visibility      VideoVisibility @default(PUBLIC)
-  
+  id                String          @id @default(uuid())
+  title             String
+  description       String?
+  creatorId         String
+  creator           User            @relation("CreatorVideos", fields: [creatorId], references: [id], onDelete: Cascade)
+  status            VideoStatus     @default(CREATED)
+  visibility        VideoVisibility @default(PUBLIC)
+  moderationStatus  ModerationStatus @default(PENDING_REVIEW)
+  moderatedAt       DateTime?
+  moderatedBy       String?
+  moderationNotes   String?
+
   // Phase 19: New category and tag system
-  categories      VideoCategory[]
-  videoTags       VideoTag[]   @relation("VideoToTag")
-  
+  categories        VideoCategory[]
+  videoTags         VideoTag[]   @relation("VideoToTag")
+
   // Phase 19: Keep old fields for backward compatibility (will be deprecated)
-  category        String?
-  tags            String[]
-  
-  viewCount       Int          @default(0)
-  likeCount       Int          @default(0)
+  category          String?
+  tags              String[]
 
-  sourceObjectKey String?
-  manifestPath    String?
-  processedAt     DateTime?
+  viewCount         Int          @default(0)
+  likeCount         Int          @default(0)
 
-  transcodingJobs TranscodingJob[]
-  likes           Like[]
-  watchHistory    WatchHistory[]
-  comments        Comment[]
-  analytics     VideoAnalytics?
-  watchSessions WatchSession[]
+  sourceObjectKey   String?
+  manifestPath      String?
+  processedAt       DateTime?
 
-  createdAt       DateTime     @default(now())
+  transcodingJobs   TranscodingJob[]
+  likes             Like[]
+  watchHistory      WatchHistory[]
+  comments          Comment[]
+  analytics         VideoAnalytics?
+  watchSessions     WatchSession[]
+  reports           Report[]
+  dmcaTakedowns     DMCATakedown[]
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
   @@index([creatorId])
   @@index([status])
   @@index([visibility])
+  @@index([moderationStatus])
+  @@index([moderatedAt])
 }
 
 model UploadSession {
@@ -228,11 +251,11 @@ model TranscodingJob {
 }
 
 model PlaybackTokenUsage {
-  tokenId String   @id
-  videoId String
-  issuedAt DateTime
-  usedAt   DateTime
-  viewCounted Boolean @default(false)
+  tokenId      String   @id
+  videoId      String
+  issuedAt     DateTime
+  usedAt       DateTime
+  viewCounted  Boolean  @default(false)
 
   @@index([videoId])
 }
@@ -313,6 +336,105 @@ model Notification {
   @@index([userId, createdAt])
   @@index([actorId])
   @@index([videoId])
+}
+
+// ============================================================================
+// REPORTING & MODERATION MODELS (PHASE 21)
+// ============================================================================
+
+enum ReportTarget {
+  VIDEO
+  COMMENT
+  USER
+}
+
+enum ReportReason {
+  ILLEGAL_CONTENT
+  UNDERAGE_CONTENT
+  NON_CONSENSUAL
+  VIOLENCE
+  HATE_SPEECH
+  SPAM
+  COPYRIGHT
+  IMPERSONATION
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+model Report {
+  id           String       @id @default(uuid())
+  reporterId   String
+  targetType   ReportTarget
+  targetId     String
+  reason       ReportReason
+  description  String?
+  status       ReportStatus @default(PENDING)
+  reviewedBy   String?
+  reviewedAt   DateTime?
+  resolution   String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  reporter     User   @relation("ReporterReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  video        Video? @relation(fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([targetId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model UserBan {
+  id         String    @id @default(uuid())
+  userId     String
+  bannedBy   String
+  reason     String
+  permanent  Boolean   @default(false)
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  user       User @relation("BannedUser", fields: [userId], references: [id], onDelete: Cascade)
+  admin      User @relation("AdminBans", fields: [bannedBy], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+enum DMCAStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COUNTER_FILED
+}
+
+model DMCATakedown {
+  id                 String     @id @default(uuid())
+  videoId            String
+  claimantName       String
+  claimantEmail      String
+  claimantAddress    String?
+  copyrightWork      String
+  infringementUrl    String
+  goodFaithStatement Boolean    @default(false)
+  accuracyStatement  Boolean    @default(false)
+  signature          String
+  status             DMCAStatus @default(PENDING)
+  reviewedBy         String?
+  reviewedAt         DateTime?
+  resolution         String?
+  createdAt          DateTime   @default(now())
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([videoId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // ============================================================================
