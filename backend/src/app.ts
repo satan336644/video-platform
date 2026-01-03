@@ -17,6 +17,7 @@ import followRoute from "./routes/follow.route";
 import categoryRoute from './routes/category.route';
 import tagRoute from './routes/tag.route';
 import searchRoute from './routes/search.route';
+import analyticsRoute from './routes/analytics.route';
 import { prisma } from "./prisma";
 
 
@@ -43,6 +44,7 @@ app.use("/api", historyRoute);
 app.use('/api', categoryRoute);
 app.use('/api', tagRoute);
 app.use('/api', searchRoute);
+app.use('/api', analyticsRoute);
 
 
 // Test helper: Set video to READY status (for development only)
